@@ -52,11 +52,15 @@ impl Idx {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+    /// インデックスの大きさが 0 の場合 `true` を返す.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
-impl convert::Into<Vec<usize>> for Idx {
-    fn into(self) -> Vec<usize> {
-        self.0
+impl convert::From<Idx> for Vec<usize> {
+    fn from(item: Idx) -> Self {
+        item.0
     }
 }
 

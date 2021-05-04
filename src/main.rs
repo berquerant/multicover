@@ -6,10 +6,10 @@ fn main() {
     let opt = Opt::from_args();
     let e = facade::Executor::new(
         opt.files,
-        opt.separator,
         opt.use_decimal_index,
         opt.depth_begin,
         opt.depth_end,
+        opt.separator,
         opt.use_empty,
         opt.use_sort,
     );

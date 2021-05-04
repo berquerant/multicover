@@ -7,6 +7,7 @@ use std::hash::Hash;
 use std::iter::Iterator;
 use std::ops;
 use std::vec::Vec;
+use std::default::Default;
 
 /// `HashSet` のリスト.
 #[derive(Clone)]
@@ -38,12 +39,12 @@ where
     ///
     /// * `value` - 要素
     /// * `indexes` - インデックスのリスト
-    pub fn contains_with_indexes(&self, value: &T, indexes: &Vec<usize>) -> bool {
-        if indexes.len() == 0 {
+    pub fn contains_with_indexes(&self, value: &T, indexes: &[usize]) -> bool {
+        if indexes.is_empty() {
             return false;
         }
         indexes.iter().all(|i| {
-            let i = i.clone();
+            let i = *i;
             i < self.0.len() && self.0[i].contains(value)
         })
     }
@@ -73,6 +74,11 @@ where
         self.0.len()
     }
 
+    /// リストが空ならば `true` を返す.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     /// すべての `HashSet` の要素数の和を返す.
     pub fn cardinality(&self) -> usize {
         self.0.iter().map(|s| s.len()).sum()
@@ -88,6 +94,15 @@ where
     }
 }
 
+impl<T> Default for MultiSet<T>
+where
+    T: Clone + Hash + Ord,
+{
+    fn default() -> Self {
+        MultiSet::new()
+    }
+}
+
 impl<T> ops::Index<usize> for MultiSet<T> {
     type Output = HashSet<T>;
 
@@ -96,9 +111,9 @@ impl<T> ops::Index<usize> for MultiSet<T> {
     }
 }
 
-impl<T> convert::Into<Vec<HashSet<T>>> for MultiSet<T> {
-    fn into(self) -> Vec<HashSet<T>> {
-        self.0
+impl<T> convert::From<MultiSet<T>> for Vec<HashSet<T>> {
+    fn from(item: MultiSet<T>) -> Self {
+        item.0
     }
 }
 
@@ -193,10 +208,10 @@ where
             .indexes
             .iter()
             .filter(|i| {
-                let idx: Idx = (*i).clone();
-                self.s.contains_with_indexes(u, &idx.into())
+                let idx: Vec<usize> = Vec::from((*i).clone());
+                self.s.contains_with_indexes(u, &idx.as_slice())
             })
-            .map(|i| i.clone())
+            .cloned()
             .collect();
         Some(MultiSetElement(u.clone(), v))
     }

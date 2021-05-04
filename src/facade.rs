@@ -19,19 +19,19 @@ pub struct Executor {
 impl Executor {
     pub fn new(
         files: Vec<PathBuf>,
-        separator: char,
         use_decimal_index: bool,
         depth_begin: Option<usize>,
         depth_end: Option<usize>,
+        separator: char,
         use_empty: bool,
         use_sort: bool,
     ) -> Executor {
         Executor {
             files,
-            separator,
             use_decimal_index,
             depth_begin,
             depth_end,
+            separator,
             use_empty,
             use_sort,
         }
@@ -44,7 +44,7 @@ impl Executor {
             let p = l.split(self.separator).enumerate();
             for (i, x) in p {
                 // 空文字列を無視する
-                if !self.use_empty && x.len() == 0 {
+                if !self.use_empty && x.is_empty() {
                     continue;
                 }
                 s.insert(i, x.to_owned());
@@ -60,7 +60,7 @@ impl Executor {
             for line in r.lines() {
                 let l = line.unwrap();
                 // 空文字列を無視する
-                if !self.use_empty && l.len() == 0 {
+                if !self.use_empty && l.is_empty() {
                     continue;
                 }
                 s.insert(i, l.to_owned());
@@ -69,7 +69,7 @@ impl Executor {
         s
     }
     fn gen_multiset(&self) -> multiset::MultiSet<String> {
-        if self.files.len() == 0 {
+        if self.files.is_empty() {
             self.multiset_from_stdin()
         } else {
             self.multiset_from_files()
@@ -77,7 +77,7 @@ impl Executor {
     }
     fn element_to_string(
         e: &multiset::MultiSetElement<String>,
-        indexes: &Vec<setidx::Idx>,
+        indexes: &[setidx::Idx],
     ) -> String {
         indexes
             .iter()
@@ -86,23 +86,23 @@ impl Executor {
             .collect::<Vec<_>>()
             .join(" ")
     }
-    fn output_element(p: &multiset::MultiSetElement<String>, indexes: &Vec<setidx::Idx>) {
-        let e = p.element().clone();
+    fn output_element(p: &multiset::MultiSetElement<String>, indexes: &[setidx::Idx]) {
+        let e = p.element();
         let r = Executor::element_to_string(p, indexes);
         println!("{} {}", e, r);
     }
-    fn output_elements(it: multiset::MultiSetIterator<String>, indexes: &Vec<setidx::Idx>) {
+    fn output_elements(it: multiset::MultiSetIterator<String>, indexes: &[setidx::Idx]) {
         it.for_each(|p| Executor::output_element(&p, indexes));
     }
     fn output_elements_with_sort(
         it: multiset::MultiSetIterator<String>,
-        indexes: &Vec<setidx::Idx>,
+        indexes: &[setidx::Idx],
     ) {
         let mut v = it.collect::<Vec<_>>();
-        v.sort_by(|a, b| a.element().cmp(&b.element()));
+        v.sort_by_key(|a| a.element());
         v.iter().for_each(|p| Executor::output_element(p, indexes));
     }
-    fn print_elements(&self, it: multiset::MultiSetIterator<String>, indexes: &Vec<setidx::Idx>) {
+    fn print_elements(&self, it: multiset::MultiSetIterator<String>, indexes: &[setidx::Idx]) {
         if self.use_sort {
             Executor::output_elements_with_sort(it, indexes);
         } else {
