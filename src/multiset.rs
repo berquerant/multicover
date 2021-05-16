@@ -3,11 +3,11 @@ use std::clone::Clone;
 use std::cmp::{Eq, Ord, PartialEq};
 use std::collections::HashSet;
 use std::convert;
+use std::default::Default;
 use std::hash::Hash;
-use std::iter::Iterator;
+use std::iter::{Iterator, IntoIterator};
 use std::ops;
 use std::vec::Vec;
-use std::default::Default;
 
 /// `HashSet` のリスト.
 #[derive(Clone)]
@@ -17,11 +17,6 @@ impl<T> MultiSet<T>
 where
     T: Eq + PartialEq + Ord + Hash + Clone,
 {
-    /// 新しい `MultiSet` を作る.
-    pub fn new() -> MultiSet<T> {
-        MultiSet(Vec::new())
-    }
-
     /// すべての `HashSet` の和集合を返す.
     pub fn union(&self) -> HashSet<T> {
         let mut u = HashSet::new();
@@ -39,13 +34,13 @@ where
     ///
     /// * `value` - 要素
     /// * `indexes` - インデックスのリスト
-    pub fn contains_with_indexes(&self, value: &T, indexes: &[usize]) -> bool {
+    pub fn contains_with_indexes(&self, value: &T, indexes: &Idx) -> bool {
         if indexes.is_empty() {
             return false;
         }
-        indexes.iter().all(|i| {
-            let i = *i;
-            i < self.0.len() && self.0[i].contains(value)
+        (0..indexes.len()).all(|i| {
+            let x = indexes[i];
+            x < self.0.len() && self.0[x].contains(value)
         })
     }
 
@@ -89,8 +84,8 @@ where
     /// # Arguments
     ///
     /// * `indexes` - 調査対象の集合の組み合わせのリスト
-    pub fn element_iter(&self, indexes: Vec<Idx>) -> MultiSetIterator<T> {
-        MultiSetIterator::new(self.clone(), indexes)
+    pub fn element_iter(self, indexes: Vec<Idx>) -> MultiSetIterator<T> {
+        MultiSetIterator::new(self, indexes)
     }
 }
 
@@ -99,7 +94,7 @@ where
     T: Clone + Hash + Ord,
 {
     fn default() -> Self {
-        MultiSet::new()
+        MultiSet(Vec::new())
     }
 }
 
@@ -120,56 +115,18 @@ impl<T> convert::From<MultiSet<T>> for Vec<HashSet<T>> {
 /// `MultiSetIterator` のイテレーションの要素.
 pub struct MultiSetElement<T>(T, HashSet<Idx>);
 
-impl<T> MultiSetElement<T>
-where
-    T: Clone,
-{
+impl<T> MultiSetElement<T> {
     /// 集合の要素.
-    pub fn element(&self) -> T {
-        self.0.clone()
+    pub fn element(&self) -> &T {
+        &self.0
     }
     /// どの集合に属しているか.
-    pub fn indexes(&self) -> HashSet<Idx> {
-        self.1.clone()
+    pub fn indexes(&self) -> &HashSet<Idx> {
+        &self.1
     }
 }
 
 /// `MultiSet` に属する要素が、リストの `HashSet` にどのように属しているのかを表現する.
-///
-/// # Example
-///
-/// ```
-/// use multicover::multiset;
-/// use multicover::setidx;
-/// use std::collections::HashSet;
-/// let mut ms: multiset::MultiSet<String> = multiset::MultiSet::new();
-/// ms.insert(0, "stella".to_owned());
-/// ms.insert(0, "luna".to_owned());
-/// ms.insert(1, "luna".to_owned());
-/// ms.insert(1, "sun".to_owned());
-/// let indexes: Vec<setidx::Idx> = vec![
-///    vec![0usize],
-///    vec![1usize],
-///    vec![0usize, 1usize],
-/// ].iter().map(|i| setidx::Idx::new(i.clone())).collect();
-/// let msi = ms.element_iter(indexes);
-/// let mut got = msi.collect::<Vec<_>>();
-/// got.sort_by(|a, b| a.element().cmp(&b.element()));
-/// let want = vec![
-///   ("luna", vec![vec![0usize], vec![1usize], vec![0usize, 1usize]]),
-///   ("stella", vec![vec![0usize]]),
-///   ("sun", vec![vec![1usize]]),
-/// ];
-/// assert_eq!(got.len(), want.len());
-/// for (i, g) in got.iter().enumerate() {
-///   let w = &want[i];
-///   assert_eq!(g.element(), w.0);
-///   let wi: HashSet<setidx::Idx> = w.1.iter()
-///         .map(|i| setidx::Idx::new(i.clone()))
-///         .collect();
-///   assert_eq!(g.indexes(), wi);
-/// }
-/// ```
 pub struct MultiSetIterator<T> {
     s: MultiSet<T>,
     u: Vec<T>,
@@ -207,12 +164,48 @@ where
         let v: HashSet<Idx> = self
             .indexes
             .iter()
-            .filter(|i| {
-                let idx: Vec<usize> = Vec::from((*i).clone());
-                self.s.contains_with_indexes(u, &idx.as_slice())
-            })
+            .filter(|i| self.s.contains_with_indexes(u, i))
             .cloned()
             .collect();
         Some(MultiSetElement(u.clone(), v))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_multiset() {
+        let mut ms: MultiSet<String> = Default::default();
+        ms.insert(0, "stella".to_owned());
+        ms.insert(0, "luna".to_owned());
+        ms.insert(1, "luna".to_owned());
+        ms.insert(1, "sun".to_owned());
+
+        let indexes: Vec<Idx> = vec![vec![0usize], vec![1usize], vec![0usize, 1usize]]
+            .into_iter()
+            .map(Idx::from)
+            .collect();
+
+        let msi = ms.element_iter(indexes);
+        let mut got = msi.collect::<Vec<_>>();
+        got.sort_by_key(|a| a.element().clone());
+        let want = vec![
+            (
+                "luna",
+                vec![vec![0usize], vec![1usize], vec![0usize, 1usize]],
+            ),
+            ("stella", vec![vec![0usize]]),
+            ("sun", vec![vec![1usize]]),
+        ];
+
+        assert_eq!(got.len(), want.len());
+        for (i, g) in got.iter().enumerate() {
+            let w = &want[i];
+            assert_eq!(g.element(), w.0);
+            let wi: HashSet<Idx> = w.1.iter().map(|i| Idx::from(i.clone())).collect();
+            assert_eq!(*g.indexes(), wi);
+        }
     }
 }

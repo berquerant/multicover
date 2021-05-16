@@ -27,8 +27,8 @@ impl Idx {
     ///
     /// ```
     /// use multicover::setidx;
-    /// let i = setidx::Idx::new(vec![1, 2]);
-    /// let b = setidx::BIdx::new(vec![false, true, true, false]);
+    /// let i = setidx::Idx::from(vec![1, 2]);
+    /// let b = setidx::BIdx::from(vec![false, true, true, false]);
     /// assert_eq!(i.to_bidx(4), b)
     /// ```
     pub fn to_bidx(&self, n: usize) -> BIdx {
@@ -37,17 +37,13 @@ impl Idx {
         let vs: Vec<bool> = xs.iter().map(|x| s.contains(x)).collect();
         BIdx(vs)
     }
-    /// 新しい `Idx` を作る.
-    pub fn new(v: Vec<usize>) -> Idx {
-        Idx(v)
-    }
     /// インデックスの大きさを返す.
     ///
     /// # Example
     ///
     /// ```
     /// use multicover::setidx::Idx;
-    /// assert_eq!(3, Idx::new(vec![1usize, 2usize, 4usize]).len());
+    /// assert_eq!(3, Idx::from(vec![1usize, 2usize, 4usize]).len());
     /// ```
     pub fn len(&self) -> usize {
         self.0.len()
@@ -58,6 +54,11 @@ impl Idx {
     }
 }
 
+impl convert::From<Vec<usize>> for Idx {
+    fn from(item: Vec<usize>) -> Self {
+        Idx(item)
+    }
+}
 impl convert::From<Idx> for Vec<usize> {
     fn from(item: Idx) -> Self {
         item.0
@@ -72,31 +73,6 @@ impl ops::Index<usize> for Idx {
     }
 }
 
-impl ToString for BIdx {
-    /// `BIdx` のコンパクトな文字列表現.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use multicover::setidx::BIdx;
-    /// let b = BIdx::new(vec![false, true, true, false]);
-    /// assert_eq!(b.to_string(), "0110");
-    /// ```
-    fn to_string(&self) -> String {
-        self.0
-            .iter()
-            .map(|x| if *x { 1 } else { 0 })
-            .fold("".to_owned(), |acc, x| format!("{}{}", acc, x))
-    }
-}
-
-impl BIdx {
-    /// 新しい `BIdx` を作る.
-    pub fn new(v: Vec<bool>) -> BIdx {
-        BIdx(v)
-    }
-}
-
 impl BIdx {
     /// `BIdx` を2進数として解釈し、10進数で表現する.
     ///
@@ -104,24 +80,42 @@ impl BIdx {
     ///
     /// ```
     /// use multicover::setidx::BIdx;
-    /// let v = BIdx::new(vec![false, true, true, false]);
+    /// let v = BIdx::from(vec![false, true, true, false]);
     /// assert_eq!(v.to_decimal(), 6);
     /// ```
     pub fn to_decimal(&self) -> usize {
         let n = self.0.len() as u32;
-        self.0.iter().enumerate().fold(0usize, |acc, x| {
-            acc + if *x.1 {
-                2u64.pow(n - 1 - x.0 as u32) as usize
-            } else {
-                0
-            }
-        })
+        self.0
+            .iter()
+            .enumerate()
+            .filter(|x| *x.1)
+            .map(|x| 1 << (n - 1 - x.0 as u32) as usize)
+            .sum()
     }
 }
 
-impl convert::From<Vec<usize>> for Idx {
-    fn from(item: Vec<usize>) -> Self {
-        Idx(item)
+impl convert::From<Vec<bool>> for BIdx {
+    fn from(item: Vec<bool>) -> Self {
+        BIdx(item)
+    }
+}
+
+impl ToString for BIdx {
+    /// `BIdx` のコンパクトな文字列表現.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use multicover::setidx::BIdx;
+    /// let b = BIdx::from(vec![false, true, true, false]);
+    /// assert_eq!(b.to_string(), "0110");
+    /// ```
+    fn to_string(&self) -> String {
+        self.0
+            .iter()
+            .map(|x| if *x { "1" } else { "0" })
+            .collect::<Vec<_>>()
+            .join("")
     }
 }
 
@@ -162,7 +156,11 @@ impl Indexes {
     /// * `depth_begin` - 何個とる組み合わせから考慮するか. `None` ならば 1 から考慮する
     /// * `depth_end` - 何個とる組み合わせまで考慮するか. `None` ならば `size` まで考慮する
     pub fn new(size: usize, depth_begin: Option<usize>, depth_end: Option<usize>) -> Indexes {
-        let dbgn = depth_begin.or(Some(1)).unwrap();
+        let dbgn = if let Some(d) = depth_begin {
+            cmp::max(1, d)
+        } else {
+            1
+        };
         let dend = if let Some(d) = depth_end {
             cmp::min(size, d)
         } else {
