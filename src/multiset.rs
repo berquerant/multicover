@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use std::convert;
 use std::default::Default;
 use std::hash::Hash;
-use std::iter::{Iterator, IntoIterator};
+use std::iter::{IntoIterator, Iterator};
 use std::ops;
 use std::vec::Vec;
 
