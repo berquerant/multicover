@@ -23,12 +23,12 @@ impl<'a> MultiSetGenerator<'a> {
     }
     fn generate(&self) -> io::Result<multiset::MultiSet<String>> {
         if self.files.is_empty() {
-            self.from_stdin()
+            self.generate_from_stdin()
         } else {
-            self.from_files()
+            self.generate_from_files()
         }
     }
-    fn from_stdin(&self) -> io::Result<multiset::MultiSet<String>> {
+    fn generate_from_stdin(&self) -> io::Result<multiset::MultiSet<String>> {
         let mut s: multiset::MultiSet<String> = Default::default();
         let stdin = io::stdin();
         for line in stdin.lock().lines() {
@@ -44,7 +44,7 @@ impl<'a> MultiSetGenerator<'a> {
         }
         Ok(s)
     }
-    fn from_files(&self) -> io::Result<multiset::MultiSet<String>> {
+    fn generate_from_files(&self) -> io::Result<multiset::MultiSet<String>> {
         let mut s: multiset::MultiSet<String> = Default::default();
         for (i, f) in self.files.iter().enumerate() {
             let file = File::open(f)?;
