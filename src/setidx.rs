@@ -6,7 +6,6 @@ use std::convert;
 use std::hash::Hash;
 use std::iter::Iterator;
 use std::ops;
-use std::string::ToString;
 use std::vec::Vec;
 
 /// 組み合わせを表す.
@@ -100,7 +99,7 @@ impl convert::From<Vec<bool>> for BIdx {
     }
 }
 
-impl ToString for BIdx {
+impl std::fmt::Display for BIdx {
     /// `BIdx` のコンパクトな文字列表現.
     ///
     /// # Example
@@ -110,12 +109,14 @@ impl ToString for BIdx {
     /// let b = BIdx::from(vec![false, true, true, false]);
     /// assert_eq!(b.to_string(), "0110");
     /// ```
-    fn to_string(&self) -> String {
-        self.0
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let r = self
+            .0
             .iter()
             .map(|x| if *x { "1" } else { "0" })
             .collect::<Vec<_>>()
-            .join("")
+            .join("");
+        write!(f, "{}", r)
     }
 }
 

@@ -1,11 +1,11 @@
 [package]
 name = "multicover"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["berquerant"]
 edition = "2018"
 readme = "README.md"
 repository = "https://github.com/berquerant/multicover"
 
 [dependencies]
-itertools = "0.12.1"
-structopt = "0.3"
+clap = { version = "4.5.4", features = ["derive"] }
+itertools = "0.13.0"
