@@ -14,7 +14,7 @@ struct MultiSetGenerator<'a> {
 }
 
 impl<'a> MultiSetGenerator<'a> {
-    fn new(files: &'a [PathBuf], separator: char, use_empty: bool) -> MultiSetGenerator {
+    fn new(files: &'a [PathBuf], separator: char, use_empty: bool) -> MultiSetGenerator<'a> {
         MultiSetGenerator {
             files,
             separator,
@@ -69,7 +69,11 @@ struct HeaderGenerator<'a> {
 }
 
 impl<'a> HeaderGenerator<'a> {
-    fn new(indexes: &'a Vec<setidx::Idx>, size: usize, use_decimal_index: bool) -> HeaderGenerator {
+    fn new(
+        indexes: &'a Vec<setidx::Idx>,
+        size: usize,
+        use_decimal_index: bool,
+    ) -> HeaderGenerator<'a> {
         HeaderGenerator {
             indexes,
             size,
@@ -112,7 +116,7 @@ impl<'a> ElementStringer<'a> {
     }
 }
 
-impl<'a> iter::IntoIterator for ElementStringer<'a> {
+impl iter::IntoIterator for ElementStringer<'_> {
     type Item = String;
     type IntoIter = ElementStringerIntoIterator;
 
