@@ -155,7 +155,7 @@ impl Iterator for ElementStringerIntoIterator {
                 .map(|x| if i.indexes().contains(x) { "1" } else { "0" })
                 .collect::<Vec<_>>()
                 .join(" ");
-            format!("{} {}", e, r)
+            format!("{e} {r}")
         })
     }
 }
@@ -197,8 +197,8 @@ impl Executor {
             setidx::Indexes::new(ms.len(), self.depth_begin, self.depth_end).collect();
         let hg = HeaderGenerator::new(&indexes, ms.len(), self.use_decimal_index);
         let h = hg.generate();
-        println!("u {}", h);
+        println!("u {h}");
         let es = ElementStringer::new(&indexes, &ms, self.use_sort);
-        es.into_iter().for_each(|x| println!("{}", x));
+        es.into_iter().for_each(|x| println!("{x}"));
     }
 }

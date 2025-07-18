@@ -116,7 +116,7 @@ impl std::fmt::Display for BIdx {
             .map(|x| if *x { "1" } else { "0" })
             .collect::<Vec<_>>()
             .join("");
-        write!(f, "{}", r)
+        write!(f, "{r}")
     }
 }
 
